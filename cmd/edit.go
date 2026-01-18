@@ -12,9 +12,10 @@ import (
 )
 
 var (
-	editTitle string
-	editBody  string
-	editForce bool
+	editTitle      string
+	editBody       string
+	editForce      bool
+	editForceUnsafe bool
 )
 
 var editCmd = &cobra.Command{
@@ -43,6 +44,21 @@ Use --force to skip the confirmation prompt.`,
 		note, err := database.GetNote(noteTitle)
 		if err != nil {
 			return fmt.Errorf("note not found: %w", err)
+		}
+
+		// Check for rich content (images, attachments, etc.)
+		hasRichContent, err := database.HasRichContent(note.Title)
+		if err != nil {
+			return fmt.Errorf("failed to check note content: %w", err)
+		}
+
+		if hasRichContent && !editForceUnsafe {
+			fmt.Println("ERROR: This note contains rich content (images, attachments, tables, or formatting).")
+			fmt.Println("Editing will permanently destroy this content.")
+			fmt.Println("\nOptions:")
+			fmt.Println("  1. Edit in Notes.app to preserve rich content")
+			fmt.Println("  2. Use --force-unsafe flag to edit anyway (NOT RECOMMENDED)")
+			return fmt.Errorf("edit blocked to prevent data loss")
 		}
 
 		// Use existing title if new title not provided
@@ -94,4 +110,5 @@ func init() {
 	editCmd.Flags().StringVarP(&editTitle, "title", "t", "", "New title for the note (optional)")
 	editCmd.Flags().StringVarP(&editBody, "body", "b", "", "New body for the note (if not provided, reads from stdin)")
 	editCmd.Flags().BoolVar(&editForce, "force", false, "Skip confirmation prompt (use with caution)")
+	editCmd.Flags().BoolVar(&editForceUnsafe, "force-unsafe", false, "Allow editing notes with rich content (DANGEROUS: will destroy images/attachments)")
 }

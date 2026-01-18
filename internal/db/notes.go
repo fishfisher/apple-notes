@@ -224,6 +224,48 @@ func (db *DB) GetNote(identifier string) (*Note, error) {
 	return &note, nil
 }
 
+// HasRichContent checks if a note contains rich content (images, attachments, formatting, etc.)
+func (db *DB) HasRichContent(noteIdentifier string) (bool, error) {
+	// First get the note's primary key
+	noteQuery := `
+		SELECT Z_PK
+		FROM ZICCLOUDSYNCINGOBJECT
+		WHERE ZMARKEDFORDELETION = 0
+			AND ZTITLE1 IS NOT NULL
+			AND (Z_PK = ? OR ZTITLE1 = ?)
+		LIMIT 1
+	`
+
+	var notePK int
+	err := db.conn.QueryRow(noteQuery, noteIdentifier, noteIdentifier).Scan(&notePK)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, fmt.Errorf("note not found: %s", noteIdentifier)
+		}
+		return false, fmt.Errorf("failed to find note: %w", err)
+	}
+
+	// Check if there are any attachments associated with this note
+	attachmentQuery := `
+		SELECT COUNT(*)
+		FROM ZICCLOUDSYNCINGOBJECT
+		WHERE (ZNOTE = ? OR ZNOTE1 = ?)
+			AND Z_ENT IN (
+				SELECT Z_ENT FROM Z_PRIMARYKEY
+				WHERE Z_NAME IN ('ICAttachment', 'ICMedia', 'ICTable')
+			)
+	`
+
+	var attachmentCount int
+	err = db.conn.QueryRow(attachmentQuery, notePK, notePK).Scan(&attachmentCount)
+	if err != nil {
+		return false, fmt.Errorf("failed to check for attachments: %w", err)
+	}
+
+	// A note has rich content if it has any attachments (images, PDFs, tables, etc.)
+	return attachmentCount > 0, nil
+}
+
 // ListFolders retrieves all note folders with note counts
 func (db *DB) ListFolders() ([]Folder, error) {
 	query := `

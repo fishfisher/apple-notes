@@ -84,6 +84,10 @@ apple-notes edit "Shopping List" --body "Milk, Eggs, Bread, Butter"
 
 # Rename a note
 apple-notes edit "Old Title" --title "New Title" --body "Updated content"
+
+# Notes with images/attachments are protected by default
+# The tool will block edits and suggest using Notes.app
+# Use --force-unsafe to override (NOT RECOMMENDED - destroys rich content)
 ```
 
 ### Delete a note
@@ -280,16 +284,14 @@ apple-notes restore ~/backups/notes-2026-01-18.json
 
 - **macOS only**: Apple Notes database is only available on macOS.
 - **Snippet only for display**: The full note body with formatting is stored in a complex binary format. Read commands show the plain text snippet.
-- **⚠️ Edit operations destroy rich content**: When editing a note, the body is replaced with plain text. This will **permanently delete**:
+- **✅ Smart Edit Protection**: The tool automatically detects notes with rich content (images, attachments, tables, sketches) and **blocks edits by default** to prevent data loss. You'll be directed to use Notes.app for those notes. This protection can be overridden with `--force-unsafe`, but this is **NOT RECOMMENDED** as it will permanently destroy:
   - Images and photos
   - Attachments and files
   - Tables and formatting
   - Sketches and drawings
   - Any other rich media
 
-  The `edit` command will prompt for confirmation unless you use `--force`. Use with caution!
-
-- **Append is safer but still limited**: The `append` command adds text to existing notes but works with plain text only. It won't damage existing attachments, but appended content will be plain text.
+- **Append is safer**: The `append` command adds text to existing notes without replacing content, so it won't damage existing attachments. Appended content will be plain text.
 
 ## Development
 
