@@ -280,6 +280,16 @@ apple-notes restore ~/backups/notes-2026-01-18.json
 
 - **macOS only**: Apple Notes database is only available on macOS.
 - **Snippet only for display**: The full note body with formatting is stored in a complex binary format. Read commands show the plain text snippet.
+- **⚠️ Edit operations destroy rich content**: When editing a note, the body is replaced with plain text. This will **permanently delete**:
+  - Images and photos
+  - Attachments and files
+  - Tables and formatting
+  - Sketches and drawings
+  - Any other rich media
+
+  The `edit` command will prompt for confirmation unless you use `--force`. Use with caution!
+
+- **Append is safer but still limited**: The `append` command adds text to existing notes but works with plain text only. It won't damage existing attachments, but appended content will be plain text.
 
 ## Development
 
