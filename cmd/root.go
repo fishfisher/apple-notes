@@ -15,10 +15,9 @@ var (
 
 var rootCmd = &cobra.Command{
 	Use:   "apple-notes",
-	Short: "Fast CLI for Apple Notes using SQLite",
-	Long: `apple-notes is a blazing-fast command-line interface for Apple Notes.
-It directly queries the SQLite database instead of using AppleScript,
-making it orders of magnitude faster for large note collections.`,
+	Short: "CLI for Apple Notes",
+	Long: `apple-notes is a command-line interface for Apple Notes.
+It uses SQLite for fast read operations and AppleScript for write operations.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Help()
 	},
@@ -43,5 +42,9 @@ func init() {
 	rootCmd.AddCommand(showCmd)
 	rootCmd.AddCommand(foldersCmd)
 	rootCmd.AddCommand(exportCmd)
+	rootCmd.AddCommand(addCmd)
+	rootCmd.AddCommand(editCmd)
+	rootCmd.AddCommand(deleteCmd)
+	rootCmd.AddCommand(moveCmd)
 	rootCmd.AddCommand(versionCmd)
 }
