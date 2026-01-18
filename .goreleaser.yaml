@@ -19,8 +19,7 @@ builds:
       - -X main.date={{.Date}}
 
 archives:
-  - format: tar.gz
-    name_template: >-
+  - name_template: >-
       {{ .ProjectName }}_
       {{- .Version }}_
       {{- .Os }}_
@@ -32,7 +31,7 @@ brews:
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
     homepage: https://github.com/fishfisher/apple-notes
-    description: "Fast CLI for Apple Notes using SQLite"
+    description: "CLI for Apple Notes with SQLite for fast reads and AppleScript for writes"
     install: |
       bin.install "apple-notes"
     test: |
@@ -50,4 +49,4 @@ checksum:
   name_template: 'checksums.txt'
 
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  version_template: "{{ incpatch .Version }}-next"
