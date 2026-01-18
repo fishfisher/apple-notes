@@ -24,10 +24,10 @@ var statsCmd = &cobra.Command{
 		}
 
 		fmt.Println("=== Apple Notes Statistics ===\n")
-		fmt.Printf("Total notes:         %d\n", stats.TotalNotes)
-		fmt.Printf("Total folders:       %d\n", stats.TotalFolders)
-		fmt.Printf("Notes this week:     %d\n", stats.NotesThisWeek)
-		fmt.Printf("Notes this month:    %d\n", stats.NotesThisMonth)
+		fmt.Printf("Total notes:           %d\n", stats.TotalNotes)
+		fmt.Printf("Total folders:         %d\n", stats.TotalFolders)
+		fmt.Printf("Modified this week:    %d\n", stats.NotesThisWeek)
+		fmt.Printf("Modified this month:   %d\n", stats.NotesThisMonth)
 
 		if stats.LargestNote.Title != "" {
 			fmt.Printf("\nLargest note:        %s\n", stats.LargestNote.Title)

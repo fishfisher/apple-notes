@@ -27,6 +27,7 @@ func SetVersionInfo(v, c, d string) {
 	version = v
 	commit = c
 	date = d
+	rootCmd.Version = fmt.Sprintf("%s (commit: %s, built: %s)", version, commit, date)
 }
 
 func Execute() {
@@ -37,6 +38,9 @@ func Execute() {
 }
 
 func init() {
+	// Enable -v as shorthand for --version
+	rootCmd.Flags().BoolP("version", "v", false, "version for apple-notes")
+
 	// Read operations
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(searchCmd)

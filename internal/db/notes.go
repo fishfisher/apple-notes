@@ -423,25 +423,25 @@ func (db *DB) GetStats() (*Stats, error) {
 		return nil, fmt.Errorf("failed to count folders: %w", err)
 	}
 
-	// Notes this week (7 days)
+	// Notes modified this week (7 days)
 	err = db.conn.QueryRow(`
 		SELECT COUNT(*)
 		FROM ZICCLOUDSYNCINGOBJECT
 		WHERE ZTITLE1 IS NOT NULL
 			AND ZMARKEDFORDELETION = 0
-			AND ZCREATIONDATE > (strftime('%s', 'now') - 978307200 - (7 * 86400))
+			AND ZMODIFICATIONDATE1 > (strftime('%s', 'now') - 978307200 - (7 * 86400))
 	`).Scan(&stats.NotesThisWeek)
 	if err != nil {
 		return nil, fmt.Errorf("failed to count weekly notes: %w", err)
 	}
 
-	// Notes this month (30 days)
+	// Notes modified this month (30 days)
 	err = db.conn.QueryRow(`
 		SELECT COUNT(*)
 		FROM ZICCLOUDSYNCINGOBJECT
 		WHERE ZTITLE1 IS NOT NULL
 			AND ZMARKEDFORDELETION = 0
-			AND ZCREATIONDATE > (strftime('%s', 'now') - 978307200 - (30 * 86400))
+			AND ZMODIFICATIONDATE1 > (strftime('%s', 'now') - 978307200 - (30 * 86400))
 	`).Scan(&stats.NotesThisMonth)
 	if err != nil {
 		return nil, fmt.Errorf("failed to count monthly notes: %w", err)
