@@ -95,6 +95,73 @@ func ListFolderNames() ([]string, error) {
 	return folders, nil
 }
 
+// AppendNote appends content to an existing note
+func AppendNote(noteTitle, content string) error {
+	script := fmt.Sprintf(`
+		tell application "Notes"
+			set theNote to first note whose name is "%s"
+			set body of theNote to (body of theNote & "\n%s")
+		end tell
+	`, escapeQuotes(noteTitle), escapeQuotes(content))
+
+	_, err := execAppleScript(script)
+	return err
+}
+
+// AddTagToNote adds a hashtag to a note (appends it to the body)
+func AddTagToNote(noteTitle, tag string) error {
+	// Ensure tag starts with #
+	if !strings.HasPrefix(tag, "#") {
+		tag = "#" + tag
+	}
+
+	script := fmt.Sprintf(`
+		tell application "Notes"
+			set theNote to first note whose name is "%s"
+			set body of theNote to (body of theNote & " %s")
+		end tell
+	`, escapeQuotes(noteTitle), escapeQuotes(tag))
+
+	_, err := execAppleScript(script)
+	return err
+}
+
+// BulkMoveNotes moves all notes from a source folder to a target folder
+func BulkMoveNotes(sourceFolder, targetFolder string) (int, error) {
+	script := fmt.Sprintf(`
+		tell application "Notes"
+			set movedCount to 0
+			set sourceNotes to notes of folder "%s"
+			repeat with n in sourceNotes
+				move n to folder "%s"
+				set movedCount to movedCount + 1
+			end repeat
+			return movedCount
+		end tell
+	`, escapeQuotes(sourceFolder), escapeQuotes(targetFolder))
+
+	output, err := execAppleScript(script)
+	if err != nil {
+		return 0, err
+	}
+
+	var count int
+	fmt.Sscanf(output, "%d", &count)
+	return count, nil
+}
+
+// CreateFolder creates a new folder
+func CreateFolder(folderName string) error {
+	script := fmt.Sprintf(`
+		tell application "Notes"
+			make new folder with properties {name:"%s"}
+		end tell
+	`, escapeQuotes(folderName))
+
+	_, err := execAppleScript(script)
+	return err
+}
+
 // escapeQuotes escapes double quotes for AppleScript
 func escapeQuotes(s string) string {
 	return strings.ReplaceAll(s, `"`, `\"`)
