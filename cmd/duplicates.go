@@ -33,8 +33,9 @@ var duplicatesCmd = &cobra.Command{
 		for i, group := range duplicates {
 			fmt.Printf("%d. Title: %s (%d copies)\n", i+1, group[0].Title, len(group))
 			for j, note := range group {
-				fmt.Printf("   %c. Folder: %s, Modified: %s\n",
+				fmt.Printf("   %c. ID: %s, Folder: %s, Modified: %s\n",
 					'a'+j,
+					note.ID,
 					note.Folder,
 					note.Modified.Format("2006-01-02 15:04"),
 				)

@@ -34,13 +34,14 @@ var searchCmd = &cobra.Command{
 		}
 
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-		fmt.Fprintln(w, "TITLE\tFOLDER\tMODIFIED\tSNIPPET")
+		fmt.Fprintln(w, "ID\tTITLE\tFOLDER\tMODIFIED\tSNIPPET")
 		for _, note := range notes {
 			snippet := note.Snippet
 			if len(snippet) > 60 {
 				snippet = snippet[:60] + "..."
 			}
-			fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
+			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+				note.ID,
 				note.Title,
 				note.Folder,
 				note.Modified.Format("2006-01-02 15:04"),

@@ -72,9 +72,10 @@ var tagsSearchCmd = &cobra.Command{
 		}
 
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-		fmt.Fprintln(w, "TITLE\tFOLDER\tMODIFIED")
+		fmt.Fprintln(w, "ID\tTITLE\tFOLDER\tMODIFIED")
 		for _, note := range notes {
-			fmt.Fprintf(w, "%s\t%s\t%s\n",
+			fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
+				note.ID,
 				note.Title,
 				note.Folder,
 				note.Modified.Format("2006-01-02 15:04"),
@@ -87,12 +88,17 @@ var tagsSearchCmd = &cobra.Command{
 	},
 }
 
+var tagsAddByTitle bool
+
 var tagsAddCmd = &cobra.Command{
-	Use:   "add [note-title] [tag]",
+	Use:   "add [note-id-or-title] [tag]",
 	Short: "Add a tag to a note",
+	Long:  `Add a hashtag to a note.
+
+By default, numeric input is treated as a note ID. Use --by-title to search by title instead.`,
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		noteTitle := args[0]
+		identifier := args[0]
 		tag := args[1]
 
 		// Verify note exists
@@ -102,13 +108,18 @@ var tagsAddCmd = &cobra.Command{
 		}
 		defer database.Close()
 
-		_, err = database.GetNote(noteTitle)
+		var note *db.Note
+		if tagsAddByTitle {
+			note, err = database.GetNoteByTitle(identifier)
+		} else {
+			note, err = database.GetNote(identifier)
+		}
 		if err != nil {
 			return fmt.Errorf("note not found: %w", err)
 		}
 
-		fmt.Printf("Adding tag '%s' to note '%s'...\n", tag, noteTitle)
-		if err := applescript.AddTagToNote(noteTitle, tag); err != nil {
+		fmt.Printf("Adding tag '%s' to note '%s'...\n", tag, note.Title)
+		if err := applescript.AddTagToNote(note.Title, tag); err != nil {
 			return fmt.Errorf("failed to add tag: %w", err)
 		}
 
@@ -121,4 +132,6 @@ func init() {
 	tagsCmd.AddCommand(tagsListCmd)
 	tagsCmd.AddCommand(tagsSearchCmd)
 	tagsCmd.AddCommand(tagsAddCmd)
+
+	tagsAddCmd.Flags().BoolVarP(&tagsAddByTitle, "by-title", "t", false, "Search by title (even if input is numeric)")
 }

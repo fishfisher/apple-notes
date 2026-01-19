@@ -162,6 +162,56 @@ func CreateFolder(folderName string) error {
 	return err
 }
 
+// GetNoteBody retrieves the full plain text body of a note by title
+// If multiple notes have the same title, returns the most recently modified one
+func GetNoteBody(noteTitle string) (string, error) {
+	script := fmt.Sprintf(`
+		tell application "Notes"
+			set matchingNotes to notes whose name is "%s"
+			if (count of matchingNotes) = 0 then
+				error "Note not found"
+			end if
+
+			-- Sort by modification date descending to get most recent
+			set mostRecentNote to item 1 of matchingNotes
+			set mostRecentDate to modification date of mostRecentNote
+
+			repeat with n in matchingNotes
+				if modification date of n > mostRecentDate then
+					set mostRecentNote to n
+					set mostRecentDate to modification date of n
+				end if
+			end repeat
+
+			return body of mostRecentNote
+		end tell
+	`, escapeQuotes(noteTitle))
+
+	body, err := execAppleScript(script)
+	if err != nil {
+		return "", fmt.Errorf("failed to get note body: %w", err)
+	}
+
+	return body, nil
+}
+
+// GetNoteBodyByID retrieves the full plain text body of a note by its ID
+func GetNoteBodyByID(noteID string) (string, error) {
+	script := fmt.Sprintf(`
+		tell application "Notes"
+			set theNote to first note whose id is "%s"
+			return body of theNote
+		end tell
+	`, escapeQuotes(noteID))
+
+	body, err := execAppleScript(script)
+	if err != nil {
+		return "", fmt.Errorf("failed to get note body: %w", err)
+	}
+
+	return body, nil
+}
+
 // escapeQuotes escapes double quotes for AppleScript
 func escapeQuotes(s string) string {
 	return strings.ReplaceAll(s, `"`, `\"`)

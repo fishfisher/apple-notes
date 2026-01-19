@@ -29,7 +29,7 @@ brews:
   - repository:
       owner: fishfisher
       name: homebrew-tap
-      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+      token: "{{ .Env.GITHUB_TOKEN }}"
     homepage: https://github.com/fishfisher/apple-notes
     description: "CLI for Apple Notes with SQLite for fast reads and AppleScript for writes"
     install: |
