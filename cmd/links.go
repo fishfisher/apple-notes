@@ -9,17 +9,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	linksAll     bool
-	linksByTitle bool
-)
+var linksAll bool
 
 var linksCmd = &cobra.Command{
-	Use:   "links [note-id-or-title]",
+	Use:   "links [note-id]",
 	Short: "Extract URLs from notes",
-	Long:  `Extract all URLs from a specific note or find all notes containing URLs.
-
-By default, numeric input is treated as a note ID. Use --by-title to search by title instead.`,
+	Long:  `Extract all URLs from a specific note by ID or find all notes containing URLs.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		database, err := db.Open()
 		if err != nil {
@@ -57,16 +52,11 @@ By default, numeric input is treated as a note ID. Use --by-title to search by t
 
 		// Extract links from specific note
 		if len(args) == 0 {
-			return fmt.Errorf("note ID or title required (or use --all flag)")
+			return fmt.Errorf("note ID required (or use --all flag)")
 		}
 
-		identifier := args[0]
-		var note *db.Note
-		if linksByTitle {
-			note, err = database.GetNoteByTitle(identifier)
-		} else {
-			note, err = database.GetNote(identifier)
-		}
+		noteID := args[0]
+		note, err := database.GetNote(noteID)
 		if err != nil {
 			return fmt.Errorf("note not found: %w", err)
 		}
@@ -92,5 +82,4 @@ By default, numeric input is treated as a note ID. Use --by-title to search by t
 
 func init() {
 	linksCmd.Flags().BoolVarP(&linksAll, "all", "a", false, "Find all notes containing links")
-	linksCmd.Flags().BoolVarP(&linksByTitle, "by-title", "t", false, "Search by title (even if input is numeric)")
 }

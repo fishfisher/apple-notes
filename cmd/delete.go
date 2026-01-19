@@ -8,20 +8,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	deleteForce   bool
-	deleteByTitle bool
-)
+var deleteForce bool
 
 var deleteCmd = &cobra.Command{
-	Use:   "delete [note-id-or-title]",
+	Use:   "delete [note-id]",
 	Short: "Delete a note",
-	Long:  `Delete a note. Use --force to skip confirmation.
-
-By default, numeric input is treated as a note ID. Use --by-title to search by title instead.`,
+	Long:  `Delete a note by ID. Use --force to skip confirmation.`,
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		identifier := args[0]
+		noteID := args[0]
 
 		// Verify note exists using SQLite
 		database, err := db.Open()
@@ -30,12 +25,7 @@ By default, numeric input is treated as a note ID. Use --by-title to search by t
 		}
 		defer database.Close()
 
-		var note *db.Note
-		if deleteByTitle {
-			note, err = database.GetNoteByTitle(identifier)
-		} else {
-			note, err = database.GetNote(identifier)
-		}
+		note, err := database.GetNote(noteID)
 		if err != nil {
 			return fmt.Errorf("note not found: %w", err)
 		}
@@ -63,5 +53,4 @@ By default, numeric input is treated as a note ID. Use --by-title to search by t
 
 func init() {
 	deleteCmd.Flags().BoolVarP(&deleteForce, "force", "y", false, "Skip confirmation prompt")
-	deleteCmd.Flags().BoolVarP(&deleteByTitle, "by-title", "t", false, "Search by title (even if input is numeric)")
 }

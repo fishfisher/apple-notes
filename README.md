@@ -64,14 +64,8 @@ apple-notes list --folder Work
 ### Show a specific note
 
 ```bash
-# By ID (most reliable - copy from list output)
+# By ID (copy from list output)
 apple-notes show 4318
-
-# By title
-apple-notes show "My Note Title"
-
-# Force title search even if input is numeric
-apple-notes show "123" --by-title
 ```
 
 ### Add a new note
@@ -87,14 +81,11 @@ apple-notes add "Shopping List" --body "Milk, Eggs, Bread" --folder Personal
 ### Edit a note
 
 ```bash
-# By ID (recommended)
-apple-notes edit 4318 --body "New content"
-
-# By title - Interactive mode (prompts for new body)
-apple-notes edit "My Note Title"
+# By ID - Interactive mode (prompts for new body)
+apple-notes edit 4318
 
 # With body from flag
-apple-notes edit "Shopping List" --body "Milk, Eggs, Bread, Butter"
+apple-notes edit 4318 --body "New content"
 
 # Rename a note
 apple-notes edit 4318 --title "New Title" --body "Updated content"
@@ -107,11 +98,8 @@ apple-notes edit 4318 --title "New Title" --body "Updated content"
 ### Delete a note
 
 ```bash
-# By ID (recommended)
+# By ID with confirmation prompt
 apple-notes delete 4318
-
-# By title with confirmation prompt
-apple-notes delete "My Note Title"
 
 # Skip confirmation
 apple-notes delete 4318 --force
@@ -120,11 +108,8 @@ apple-notes delete 4318 --force
 ### Move a note to another folder
 
 ```bash
-# By ID (recommended)
+# By ID
 apple-notes move 4318 "Work"
-
-# By title
-apple-notes move "My Note Title" "Work"
 ```
 
 ### List all folders
@@ -149,14 +134,11 @@ apple-notes export --folder Work --output ~/Desktop/work-notes.json
 ### Append to a note
 
 ```bash
-# By ID (recommended)
+# By ID - Interactive mode (prompts for content)
+apple-notes append 4318
+
+# By ID with content flag
 apple-notes append 4318 --content "Meeting with Sarah at 2pm"
-
-# By title - Interactive mode
-apple-notes append "Daily Log"
-
-# By title with content flag
-apple-notes append "Daily Log" --content "Meeting with Sarah at 2pm"
 ```
 
 ### Recent notes
@@ -184,8 +166,8 @@ apple-notes tags list
 # Search notes by tag
 apple-notes tags search "#work"
 
-# Add tag to a note
-apple-notes tags add "My Note" "#important"
+# Add tag to a note by ID
+apple-notes tags add 4318 "#important"
 ```
 
 ### Statistics
@@ -205,8 +187,8 @@ apple-notes duplicates
 ### Extract links
 
 ```bash
-# Extract URLs from a specific note
-apple-notes links "My Note"
+# Extract URLs from a specific note by ID
+apple-notes links 4318
 
 # Find all notes containing URLs
 apple-notes links --all
@@ -254,30 +236,30 @@ apple-notes restore ~/backups/notes-2026-01-18.json
 
 ## Commands
 
-**Note ID Support:** All commands that target a single note accept both note ID and title. Numeric input is treated as an ID by default. Use `--by-title` flag to force title search for numeric titles.
+**Note ID Support:** All commands that target a single note require a note ID. Use the `list` or `search` commands to find note IDs.
 
 ### Read Operations (SQLite-based - Fast)
 - `search [term]` - Search notes by title or content
 - `list` - List all notes with IDs (supports `--folder`, `--limit`, `--hide-id` flags)
-- `show [note-id-or-title]` - Show a specific note (use `--by-title` to force title search)
+- `show [note-id]` - Show a specific note
 - `folders` - List all folders with note counts
 - `recent` - Show recently modified notes (supports `--today`, `--week`, `--limit`)
 - `stats` - Display collection statistics
 - `duplicates` - Find notes with identical titles
-- `links [note-id-or-title]` - Extract URLs from notes (use `--all` to find all notes with links, `--by-title` to force title search)
+- `links [note-id]` - Extract URLs from a note (use `--all` to find all notes with links)
 - `export` - Export notes to JSON or text format
 
 ### Write Operations (AppleScript-based)
 - `add [title]` - Create a new note
-- `edit [note-id-or-title]` - Edit an existing note (use `--by-title` to force title search)
-- `delete [note-id-or-title]` - Delete a note (use `--by-title` to force title search)
-- `move [note-id-or-title] [folder]` - Move a note to a different folder (use `--by-title` to force title search)
-- `append [note-id-or-title]` - Append content to an existing note (use `--by-title` to force title search)
+- `edit [note-id]` - Edit an existing note
+- `delete [note-id]` - Delete a note
+- `move [note-id] [folder]` - Move a note to a different folder
+- `append [note-id]` - Append content to an existing note
 
 ### Tags Management
 - `tags list` - List all tags with counts
 - `tags search [tag]` - Search notes by tag
-- `tags add [note-id-or-title] [tag]` - Add a tag to a note (use `--by-title` to force title search)
+- `tags add [note-id] [tag]` - Add a tag to a note
 
 ### Bulk Operations
 - `bulk move --from [folder] --to [folder]` - Move all notes from one folder to another

@@ -8,17 +8,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var moveByTitle bool
-
 var moveCmd = &cobra.Command{
-	Use:   "move [note-id-or-title] [target-folder]",
+	Use:   "move [note-id] [target-folder]",
 	Short: "Move a note to a different folder",
-	Long:  `Move an existing note to a different folder.
-
-By default, numeric input is treated as a note ID. Use --by-title to search by title instead.`,
+	Long:  `Move an existing note to a different folder by ID.`,
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		identifier := args[0]
+		noteID := args[0]
 		targetFolder := args[1]
 
 		// Verify note exists using SQLite
@@ -28,12 +24,7 @@ By default, numeric input is treated as a note ID. Use --by-title to search by t
 		}
 		defer database.Close()
 
-		var note *db.Note
-		if moveByTitle {
-			note, err = database.GetNoteByTitle(identifier)
-		} else {
-			note, err = database.GetNote(identifier)
-		}
+		note, err := database.GetNote(noteID)
 		if err != nil {
 			return fmt.Errorf("note not found: %w", err)
 		}
@@ -51,8 +42,4 @@ By default, numeric input is treated as a note ID. Use --by-title to search by t
 		fmt.Println("Note moved successfully")
 		return nil
 	},
-}
-
-func init() {
-	moveCmd.Flags().BoolVarP(&moveByTitle, "by-title", "t", false, "Search by title (even if input is numeric)")
 }

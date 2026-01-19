@@ -11,20 +11,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	appendContent string
-	appendByTitle bool
-)
+var appendContent string
 
 var appendCmd = &cobra.Command{
-	Use:   "append [note-id-or-title]",
+	Use:   "append [note-id]",
 	Short: "Append content to an existing note",
-	Long:  `Append content to an existing note without replacing the current content.
-
-By default, numeric input is treated as a note ID. Use --by-title to search by title instead.`,
+	Long:  `Append content to an existing note by ID without replacing the current content.`,
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		identifier := args[0]
+		noteID := args[0]
 
 		// Verify note exists
 		database, err := db.Open()
@@ -33,12 +28,7 @@ By default, numeric input is treated as a note ID. Use --by-title to search by t
 		}
 		defer database.Close()
 
-		var note *db.Note
-		if appendByTitle {
-			note, err = database.GetNoteByTitle(identifier)
-		} else {
-			note, err = database.GetNote(identifier)
-		}
+		note, err := database.GetNote(noteID)
 		if err != nil {
 			return fmt.Errorf("note not found: %w", err)
 		}
@@ -70,5 +60,4 @@ By default, numeric input is treated as a note ID. Use --by-title to search by t
 
 func init() {
 	appendCmd.Flags().StringVarP(&appendContent, "content", "c", "", "Content to append (if not provided, reads from stdin)")
-	appendCmd.Flags().BoolVarP(&appendByTitle, "by-title", "t", false, "Search by title (even if input is numeric)")
 }

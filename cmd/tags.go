@@ -88,17 +88,13 @@ var tagsSearchCmd = &cobra.Command{
 	},
 }
 
-var tagsAddByTitle bool
-
 var tagsAddCmd = &cobra.Command{
-	Use:   "add [note-id-or-title] [tag]",
+	Use:   "add [note-id] [tag]",
 	Short: "Add a tag to a note",
-	Long:  `Add a hashtag to a note.
-
-By default, numeric input is treated as a note ID. Use --by-title to search by title instead.`,
+	Long:  `Add a hashtag to a note by ID.`,
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		identifier := args[0]
+		noteID := args[0]
 		tag := args[1]
 
 		// Verify note exists
@@ -108,12 +104,7 @@ By default, numeric input is treated as a note ID. Use --by-title to search by t
 		}
 		defer database.Close()
 
-		var note *db.Note
-		if tagsAddByTitle {
-			note, err = database.GetNoteByTitle(identifier)
-		} else {
-			note, err = database.GetNote(identifier)
-		}
+		note, err := database.GetNote(noteID)
 		if err != nil {
 			return fmt.Errorf("note not found: %w", err)
 		}
@@ -132,6 +123,4 @@ func init() {
 	tagsCmd.AddCommand(tagsListCmd)
 	tagsCmd.AddCommand(tagsSearchCmd)
 	tagsCmd.AddCommand(tagsAddCmd)
-
-	tagsAddCmd.Flags().BoolVarP(&tagsAddByTitle, "by-title", "t", false, "Search by title (even if input is numeric)")
 }

@@ -185,19 +185,8 @@ func (db *DB) SearchNotes(term string) ([]Note, error) {
 	return notes, nil
 }
 
-// GetNote retrieves a specific note by ID or title
-// If identifier is numeric, treats it as an ID first, then falls back to title search
-func (db *DB) GetNote(identifier string) (*Note, error) {
-	return db.GetNoteWithMode(identifier, false)
-}
-
-// GetNoteByTitle retrieves a note by title only (even if identifier looks numeric)
-func (db *DB) GetNoteByTitle(title string) (*Note, error) {
-	return db.GetNoteWithMode(title, true)
-}
-
-// GetNoteWithMode retrieves a note with explicit control over title-only mode
-func (db *DB) GetNoteWithMode(identifier string, titleOnly bool) (*Note, error) {
+// GetNote retrieves a specific note by ID only
+func (db *DB) GetNote(id string) (*Note, error) {
 	query := `
 		SELECT
 			ZICCLOUDSYNCINGOBJECT.Z_PK,
@@ -209,7 +198,47 @@ func (db *DB) GetNoteWithMode(identifier string, titleOnly bool) (*Note, error) 
 		FROM ZICCLOUDSYNCINGOBJECT
 		LEFT JOIN ZICCLOUDSYNCINGOBJECT as folders ON ZICCLOUDSYNCINGOBJECT.ZFOLDER = folders.Z_PK
 		WHERE ZICCLOUDSYNCINGOBJECT.ZMARKEDFORDELETION = 0
-			AND (ZICCLOUDSYNCINGOBJECT.Z_PK = ? OR ZICCLOUDSYNCINGOBJECT.ZTITLE1 = ?)
+			AND ZICCLOUDSYNCINGOBJECT.Z_PK = ?
+		LIMIT 1
+	`
+
+	var note Note
+	var createdStr, modifiedStr string
+
+	err := db.conn.QueryRow(query, id).Scan(
+		&note.ID, &note.Title, &note.Snippet, &note.Folder, &createdStr, &modifiedStr,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("note not found: %s", id)
+		}
+		return nil, fmt.Errorf("failed to get note: %w", err)
+	}
+
+	if createdStr != "" {
+		note.Created, _ = time.Parse("2006-01-02 15:04:05", createdStr)
+	}
+	if modifiedStr != "" {
+		note.Modified, _ = time.Parse("2006-01-02 15:04:05", modifiedStr)
+	}
+
+	return &note, nil
+}
+
+// GetNoteByTitle retrieves a note by title only (kept for internal use)
+func (db *DB) GetNoteByTitle(title string) (*Note, error) {
+	query := `
+		SELECT
+			ZICCLOUDSYNCINGOBJECT.Z_PK,
+			COALESCE(ZICCLOUDSYNCINGOBJECT.ZTITLE1, '') as title,
+			COALESCE(ZICCLOUDSYNCINGOBJECT.ZSNIPPET, '') as snippet,
+			COALESCE(folders.ZTITLE2, 'Notes') as folder,
+			COALESCE(datetime(ZICCLOUDSYNCINGOBJECT.ZCREATIONDATE + 978307200, 'unixepoch', 'localtime'), '') as created,
+			COALESCE(datetime(ZICCLOUDSYNCINGOBJECT.ZMODIFICATIONDATE1 + 978307200, 'unixepoch', 'localtime'), '') as modified
+		FROM ZICCLOUDSYNCINGOBJECT
+		LEFT JOIN ZICCLOUDSYNCINGOBJECT as folders ON ZICCLOUDSYNCINGOBJECT.ZFOLDER = folders.Z_PK
+		WHERE ZICCLOUDSYNCINGOBJECT.ZMARKEDFORDELETION = 0
+			AND ZICCLOUDSYNCINGOBJECT.ZTITLE1 = ?
 		ORDER BY ZICCLOUDSYNCINGOBJECT.ZMODIFICATIONDATE1 DESC
 		LIMIT 1
 	`
@@ -217,18 +246,12 @@ func (db *DB) GetNoteWithMode(identifier string, titleOnly bool) (*Note, error) 
 	var note Note
 	var createdStr, modifiedStr string
 
-	// If titleOnly mode, use empty string for ID parameter so it won't match
-	idParam := identifier
-	if titleOnly {
-		idParam = ""
-	}
-
-	err := db.conn.QueryRow(query, idParam, identifier).Scan(
+	err := db.conn.QueryRow(query, title).Scan(
 		&note.ID, &note.Title, &note.Snippet, &note.Folder, &createdStr, &modifiedStr,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("note not found: %s", identifier)
+			return nil, fmt.Errorf("note not found: %s", title)
 		}
 		return nil, fmt.Errorf("failed to get note: %w", err)
 	}

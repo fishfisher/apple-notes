@@ -16,15 +16,12 @@ var (
 	editBody        string
 	editForce       bool
 	editForceUnsafe bool
-	editByTitle     bool
 )
 
 var editCmd = &cobra.Command{
-	Use:   "edit [note-id-or-title]",
+	Use:   "edit [note-id]",
 	Short: "Edit an existing note",
-	Long: `Edit an existing note's title and/or body. Use --title to rename, --body to change content.
-
-By default, numeric input is treated as a note ID. Use --by-title to search by title instead.
+	Long: `Edit an existing note's title and/or body by ID. Use --title to rename, --body to change content.
 
 WARNING: Editing will replace the note body with plain text, which will remove:
   - Images and photos
@@ -35,7 +32,7 @@ WARNING: Editing will replace the note body with plain text, which will remove:
 Use --force to skip the confirmation prompt.`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		identifier := args[0]
+		noteID := args[0]
 
 		// Verify note exists using SQLite
 		database, err := db.Open()
@@ -44,12 +41,7 @@ Use --force to skip the confirmation prompt.`,
 		}
 		defer database.Close()
 
-		var note *db.Note
-		if editByTitle {
-			note, err = database.GetNoteByTitle(identifier)
-		} else {
-			note, err = database.GetNote(identifier)
-		}
+		note, err := database.GetNote(noteID)
 		if err != nil {
 			return fmt.Errorf("note not found: %w", err)
 		}
@@ -119,5 +111,4 @@ func init() {
 	editCmd.Flags().StringVarP(&editBody, "body", "b", "", "New body for the note (if not provided, reads from stdin)")
 	editCmd.Flags().BoolVar(&editForce, "force", false, "Skip confirmation prompt (use with caution)")
 	editCmd.Flags().BoolVar(&editForceUnsafe, "force-unsafe", false, "Allow editing notes with rich content (DANGEROUS: will destroy images/attachments)")
-	editCmd.Flags().BoolVarP(&editByTitle, "by-title", "t", false, "Search by title (even if input is numeric)")
 }
