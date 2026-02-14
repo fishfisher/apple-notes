@@ -10,6 +10,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 var (
@@ -18,6 +19,20 @@ var (
 	skillName    string
 )
 
+// Known AI tool skill directories.
+type skillLocation struct {
+	Label string
+	Dir   string // relative to home, e.g. ".claude/skills"
+}
+
+var knownSkillLocations = []skillLocation{
+	{"Claude Code", ".claude/skills"},
+	{"OpenAI Codex", ".codex/skills"},
+	{"OpenCode", ".config/opencode/skill"},
+	{"GitHub Copilot", ".copilot/skills"},
+	{"Agents", ".agents/skills"},
+}
+
 // SetSkillFS receives the embedded filesystem and metadata from main.
 func SetSkillFS(fsys fs.FS, dirName, name string) {
 	skillFS = fsys
@@ -25,10 +40,27 @@ func SetSkillFS(fsys fs.FS, dirName, name string) {
 	skillName = name
 }
 
+// choose prints a numbered menu and returns the 0-based index, or -1 on invalid input.
+func choose(prompt string, options []string) int {
+	fmt.Println(prompt)
+	for i, opt := range options {
+		fmt.Printf("  %d) %s\n", i+1, opt)
+	}
+	fmt.Print("> ")
+	reader := bufio.NewReader(os.Stdin)
+	line, _ := reader.ReadString('\n')
+	line = strings.TrimSpace(line)
+	n := 0
+	if _, err := fmt.Sscanf(line, "%d", &n); err != nil || n < 1 || n > len(options) {
+		return -1
+	}
+	return n - 1
+}
+
 var installSkillCmd = &cobra.Command{
 	Use:   "install-skill",
-	Short: "Install the Claude Code skill for this CLI",
-	Long:  "Copies the embedded skill files to ~/.claude/skills/ so Claude Code can discover them globally.",
+	Short: "Install the AI coding skill for this CLI",
+	Long:  "Copies the embedded skill files to an AI tool's skill directory so it can discover them globally.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if skillFS == nil {
 			return fmt.Errorf("no skill files embedded")
@@ -42,14 +74,45 @@ var installSkillCmd = &cobra.Command{
 			if err != nil {
 				return fmt.Errorf("finding home directory: %w", err)
 			}
-			baseDir = filepath.Join(home, ".claude", "skills")
+
+			if term.IsTerminal(int(os.Stdin.Fd())) {
+				options := make([]string, 0, len(knownSkillLocations)+1)
+				for _, loc := range knownSkillLocations {
+					options = append(options, loc.Label)
+				}
+				options = append(options, "Custom path")
+
+				choice := choose("Install skill to:", options)
+				if choice < 0 {
+					fmt.Println("Aborted.")
+					return nil
+				}
+				if choice < len(knownSkillLocations) {
+					baseDir = filepath.Join(home, knownSkillLocations[choice].Dir)
+				} else {
+					fmt.Print("Enter path: ")
+					reader := bufio.NewReader(os.Stdin)
+					entered, _ := reader.ReadString('\n')
+					entered = strings.TrimSpace(entered)
+					if entered == "" {
+						fmt.Println("Aborted.")
+						return nil
+					}
+					if strings.HasPrefix(entered, "~/") {
+						entered = filepath.Join(home, entered[2:])
+					}
+					baseDir = entered
+				}
+			} else {
+				// Non-interactive: default to Claude Code
+				baseDir = filepath.Join(home, knownSkillLocations[0].Dir)
+			}
 		}
 		destDir := filepath.Join(baseDir, skillName)
 
-		// Collect all files from the embedded FS
 		type fileEntry struct {
-			relPath string // path relative to destDir
-			embPath string // path inside embed.FS
+			relPath string
+			embPath string
 		}
 		var files []fileEntry
 
@@ -68,7 +131,6 @@ var installSkillCmd = &cobra.Command{
 			return fmt.Errorf("reading embedded files: %w", err)
 		}
 
-		// Check which files already exist
 		var existing []string
 		for _, f := range files {
 			dest := filepath.Join(destDir, f.relPath)
@@ -77,7 +139,6 @@ var installSkillCmd = &cobra.Command{
 			}
 		}
 
-		// Show file list
 		bold := color.New(color.Bold)
 		bold.Printf("Installing to %s\n", destDir)
 		for _, f := range files {
@@ -91,7 +152,6 @@ var installSkillCmd = &cobra.Command{
 			fmt.Printf("  %s%s\n", f.relPath, marker)
 		}
 
-		// Prompt if existing files and not --force
 		if len(existing) > 0 && !force {
 			fmt.Printf("\n%s Overwrite %d existing file(s)? [y/N] ", color.YellowString("?"), len(existing))
 			reader := bufio.NewReader(os.Stdin)
@@ -102,7 +162,6 @@ var installSkillCmd = &cobra.Command{
 			}
 		}
 
-		// Create directories and copy files
 		for _, f := range files {
 			dest := filepath.Join(destDir, f.relPath)
 			if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
@@ -123,7 +182,7 @@ var installSkillCmd = &cobra.Command{
 }
 
 func init() {
-	installSkillCmd.Flags().StringP("path", "p", "", "Parent directory (default: ~/.claude/skills/)")
+	installSkillCmd.Flags().StringP("path", "p", "", "Parent directory (default: interactive selection)")
 	installSkillCmd.Flags().BoolP("force", "f", false, "Overwrite existing files without prompting")
 	rootCmd.AddCommand(installSkillCmd)
 }
